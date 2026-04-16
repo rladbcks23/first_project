@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+{% block head %}
+<style>
+        body {
+            max-width: 800px;
+            margin: 40px auto;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        .title-input {
+            width: 100%;
+            font-size: 28px;
+            padding: 12px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .block {
+            margin-bottom: 16px;
+        }
+
+        .block textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            font-size: 16px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+
+        .block-actions {
+            margin-top: 8px;
+        }
+
+        .add-btn, .save-btn, .delete-btn {
+            padding: 8px 14px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .add-btn {
+            margin-top: 12px;
+        }
+
+        .save-btn {
+            margin-top: 24px;
+        }
+
+        .delete-btn {
+            margin-left: 8px;
+        }
+    </style>
+{% endblock head %}
+
+{% block content %}
+<h1>새 메모 만들기</h1>
+
+<form actions={% url "notebooks:create" %} method="post">
+    {% csrf_token %}
+
+    <input
+        type="text"
+        name="title"
+        class="title-input"
+        placeholder="제목을 입력하세요"
+    >
+
+    <div id="block-container">
+        <div class="block">
+            <input type="hidden" name="block_type" value="text">
+            <textarea name="block_content" placeholder="내용을 입력하세요"></textarea>
+            <div class="block-actions">
+                <button type="button" class="delete-btn">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="add-btn" id="add-block-btn">+ 블록 추가</button>
+    <br>
+    <button type="submit" class="save-btn">저장</button>
+</form>
+
+<script>
+    const blockContainer = document.getElementById('block-container');
+    const addBlockBtn = document.getElementById('add-block-btn');
+
+    function createTextBlock() {
+        const blockDiv = document.createElement('div');
+        blockDiv.className = 'block';
+
+        blockDiv.innerHTML = `
+            <input type="hidden" name="block_type" value="text">
+            <textarea name="block_content" placeholder="내용을 입력하세요"></textarea>
+            <div class="block-actions">
+                <button type="button" class="delete-btn">삭제</button>
+            </div>
+        `;
+
+        const deleteBtn = blockDiv.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', function () {
+            blockDiv.remove();
+        });
+
+        return blockDiv;
+    }
+
+    addBlockBtn.addEventListener('click', function () {
+        const newBlock = createTextBlock();
+        blockContainer.appendChild(newBlock);
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(function (button) {
+        button.addEventListener('click', function () {
+            button.closest('.block').remove();
+        });
+    });
+
+</script>
+
+{% endblock content %}

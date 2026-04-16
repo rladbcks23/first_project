@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>새 노트북 만들기</h1>
+
+<form actions={% url "notebooks:notebook_create" %} method="post">
+    {% csrf_token %}
+
+    <div>
+        <label for="{{ form.name.id_for_label }}">노트북 이름</label>
+        {{ form.name }}
+    </div>
+
+    {% if form.name.errors %}
+        <div>
+            {{ form.name.errors }}
+        </div>
+    {% endif %}
+
+    <button type="submit">생성하기</button>
+</form>
+
+<a href="{% url 'notebook:index' %}">목록으로 돌아가기</a>
+
+{% endblock content %}
