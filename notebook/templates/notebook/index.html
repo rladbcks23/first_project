@@ -4,7 +4,7 @@
 
 <h1>내 메모들</h1>
 {% comment %} notebook 생성 {% endcomment %}
-<a href={% url "notebooks:notebook_create" %}>메모하러가기</a>
+<a href={% url "notebooks:notebook_create"  %}>메모하러가기</a>
 
 {% comment %} 만약 노트북이 존재한다면 {% endcomment %}
 {% if notebooks %}
