@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>노트북 수정</h1>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div>
+        <label>노트북 이름</label>
+        {{ form.name }}
+    </div>
+
+    <button type="submit">수정하기</button>
+</form>
+
+<a href="{% url 'notebooks:notebook_detail' notebook.id %}">돌아가기</a>
+
+{% endblock content %}

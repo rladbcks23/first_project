@@ -28,7 +28,7 @@ def index(request):
 # 노트북 생성
 @login_required
 def notebook_create(request):
-    # POST 요청이 들어오면
+    # POST 요청이 들어오면(값이 들어왔다는 뜻)
     if request.method == 'POST':
         form = NotebookForm(request.POST)
         # 유효성 검사
@@ -52,6 +52,8 @@ def notebook_create(request):
 def notebook_detail(request, notebook_id):
     notebook = get_object_or_404(Notebook, id=notebook_id, user=request.user)
     posts = notebook.posts.all().order_by('-created_at')
+    # notebook : 해당 유저의 노트북 가져오기 (title이랑 id 가져와야지)
+    # posts : 해당 notebook에 있는 posts 가져오기 
 
     context = {
         'notebook': notebook,
@@ -60,12 +62,31 @@ def notebook_detail(request, notebook_id):
     return render(request, 'notebook/notebook_detail.html', context)
 
 # 노트북 수정( 뭐 순서라든가, 안에 Post 삭제라든가, Post Notebook 옮기기라든가)
+@login_required
 def notebook_update(request, notebook_id):
-    return
+    notebook = get_object_or_404(Notebook, id=notebook_id, user=request.user)
+    # notebook : 수정할 노트북 가져오기
+
+    # POST 요청일 시(수정 완료시) 유효성 검사 후 저장 밑 반환
+    if request.method == 'POST':
+        form = NotebookForm(request.POST, instance=notebook)
+        # 유효성검사
+        if form.is_valid():
+            form.save()
+            return redirect('notebooks:notebook_detail', notebook.id)
+    # 그게 아니면 생성할 때 넣어놓은 기본값을 불러오기
+    else:
+        form = NotebookForm(instance=notebook)
+        # instance=notebook : 생성할 때 넣어놓은 기본값을 불러오기
+        context = {
+            'form': form,
+            'notebook': notebook,
+        }
+        return render(request, 'notebook/notebook_update.html', context)
 
 # 노트북 삭제 ( 동시에 안에 있는 Post 모두 삭제)
 def notebook_delete(request, notebook_id):
-    return
+    return 
 
 # ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ NOTEBOOK ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
@@ -80,6 +101,7 @@ def post_create(request, notebook_id):
     notebook = get_object_or_404(Notebook, id=notebook_id, user=request.user)
     # 흐름 : Notebook → Post → Block        
     # 그래서 Post를 먼저 만들고 Post의 pk에 block을 만듦
+    # POST 요청일 시(값이 들어왔다는 뜻) 
     if request.method == 'POST':
         # 값 받아오기
         title = request.POST.get('title')
@@ -95,8 +117,9 @@ def post_create(request, notebook_id):
                 # block 생성
                 Block.objects.create(post=post, type=b_type, content=b_content, order=i)
 
-        return redirect('notebooks:index')
-    # 
+        # 노트북 detail로 돌아가기
+        return redirect('notebooks:notebook_detail', notebook_id)
+    # Post 생성하러 가기
     else:
         context = {
             'notebook' : notebook,

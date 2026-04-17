@@ -2,10 +2,10 @@
 
 {% block head %}
 <style>
-    .button-group {
-        display: flex;
-        gap: 10px;
-    }
+.button-group {
+    display: flex;
+    gap: 10px;
+}
 </style>
 {% endblock head %}
 
@@ -23,11 +23,13 @@
     <form action="{% url 'notebooks:post_create' notebook.id %}">
         <button>새 글 만들기</button>
     </form>
+    <form action="{% url 'notebooks:notebook_update' notebook.id %}">
+        <button>노트북 수정</button>
+    </form>
     <form action="{% url 'notebooks:notebook_delete' notebook.id %}">
         <button >노트북 삭제</button>
     </form>
 </div>
-
 
 <hr>
 
