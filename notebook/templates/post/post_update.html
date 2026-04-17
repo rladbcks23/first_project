@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>글 수정</title>
+
+<style>
+    body {
+        max-width: 800px;
+        margin: 40px auto;
+        font-family: Arial, sans-serif;
+    }
+
+    .title-input {
+        width: 100%;
+        font-size: 28px;
+        padding: 12px;
+        margin-bottom: 20px;
+        box-sizing: border-box;
+    }
+
+    .block {
+        margin-bottom: 16px;
+    }
+
+    .block textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 12px;
+        font-size: 16px;
+        box-sizing: border-box;
+        resize: vertical;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+</style>
+
+{% endblock head %}
+
+
+
+{% block content %}
+
+<h1>글 수정</h1>
+
+<form method="post">
+    {% csrf_token %}
+
+    <input
+        type="text"
+        name="title"
+        class="title-input"
+        value="{{ post.title }}"
+        placeholder="제목을 입력하세요"
+    >
+
+    <div id="block-container">
+        {% for block in blocks %}
+            <div class="block">
+                <input type="hidden" name="block_type" value="{{ block.type }}">
+                <textarea name="block_content" placeholder="내용을 입력하세요">{{ block.content }}</textarea>
+                <button type="button" class="delete-btn">삭제</button>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="button-group">
+        <button type="button" id="add-block-btn">+ 블록 추가</button>
+        <button type="submit">수정 완료</button>
+    </div>
+</form>
+
+<script>
+    const blockContainer = document.getElementById('block-container');
+    const addBlockBtn = document.getElementById('add-block-btn');
+
+    function createTextBlock(value = '') {
+        const blockDiv = document.createElement('div');
+        blockDiv.className = 'block';
+
+        blockDiv.innerHTML = `
+            <input type="hidden" name="block_type" value="text">
+            <textarea name="block_content" placeholder="내용을 입력하세요">${value}</textarea>
+            <button type="button" class="delete-btn">삭제</button>
+        `;
+
+        const deleteBtn = blockDiv.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', function () {
+            blockDiv.remove();
+        });
+
+        return blockDiv;
+    }
+
+    addBlockBtn.addEventListener('click', function () {
+        const newBlock = createTextBlock();
+        blockContainer.appendChild(newBlock);
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(function (button) {
+        button.addEventListener('click', function () {
+            button.closest('.block').remove();
+        });
+    });
+</script>
+
+{% endblock content %}

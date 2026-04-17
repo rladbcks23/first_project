@@ -136,15 +136,73 @@ def post_create(request, notebook_id):
         return render(request, 'post/post_create.html', context)
 
 # Post 세부정보 보기 ( 정리해놓은 block들 보기 )
+@login_required
 def post_detail(request, post_id):
-    return
+    post = get_object_or_404(Post, id=post_id, notebook__user=request.user)
+    blocks = post.blocks.all().order_by('order')
+    # post랑 post에 있는 block들 불러오기
+
+    context = {
+        'post': post,
+        'blocks': blocks,
+    }
+    # 값 넘기기
+    return render(request, 'post/post_detail.html', context)
 
 # Post 수정 ( 뭐 block들 위치를 바꾼다던가, 이미지를 바꾸거나 글을 수정한다던가... )
+# 수정 완료시 원래 block들을 전부 삭제하고 수정할때 만든 block들을 다시 load
+@login_required
 def post_update(request, post_id):
-    return
+    post = get_object_or_404(Post, id=post_id, notebook__user=request.user)
+    # post 가져오기
+
+    # POST 요청일 경우( 값이 있음 )
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        block_types = request.POST.getlist('block_type')
+        block_contents = request.POST.getlist('block_content')
+        # 새로운 값들 받아오기
+
+        post.title = title
+        post.save()
+        # 제목 수정 후 post 저장
+
+        post.blocks.all().delete()
+        # post에 있는 모든 block 삭제
+
+        # 수정시 만든 block 생성
+        for i, (b_type, b_content) in enumerate(zip(block_types, block_contents)):
+            if b_content.strip():
+                Block.objects.create(post=post,type=b_type,content=b_content,order=i)
+
+        return redirect('notebooks:post_detail', post.id)
+    # 그냥 url 치고 들어오는거 방지
+    else:
+        blocks = post.blocks.all().order_by('order')
+        # 기존 블록들 가져오기
+        context = {
+            'post': post,
+            'blocks': blocks,
+        }
+        # 값 넘기기
+        return render(request, 'post/post_update.html', context)
 
 # Post 삭제( 동시에 안에있는 block들까지 모두 삭제 )
+@login_required
 def post_delete(request, post_id):
-    return
+    post = get_object_or_404(Post, id=post_id, notebook__user=request.user)
+    # notebook__user : 언더바가 2개인 이유는 관계를 따라간다는 뜻
+    # --> Post의 notebook의 user가 request.user인 것만 가져와라
+
+    notebook_id = post.notebook.id
+    # post 삭제하면 notebook으로 돌아가야하는데 그 id 받아오기
+
+    # POST 요청이 있을때만 삭제 가능
+    if request.method == 'POST':
+        post.delete()
+        return redirect('notebooks:notebook_detail', notebook_id)
+    # GET요청 제한 ( 그냥 직접 url치고 들어오면 detail로 반환 )
+    else:
+        return redirect('notebooks:post_detail', post.id)
 
 # ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ POST ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ

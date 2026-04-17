@@ -1,2 +1,76 @@
 {% extends "base.html" %}
 
+{% block head %}
+<title>{{ post.title }}</title>
+
+<style>
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+</style>
+
+<script>
+    function handleDelete() {
+        if (confirm("이 노트북을 삭제하시겠습니까?")) {
+            document.getElementById("deleteForm").submit();
+        }
+    }
+</script>
+
+{% endblock head %}
+    
+
+{% block content %}
+<h1>{{ post.title }}</h1>
+
+<hr>
+
+<p>노트북: {{ post.notebook.name }}</p>
+<p>작성일: {{ post.created_at|date:"Y-m-d H:i" }}</p>
+
+<div class='button-group'>
+    <form action="{% url 'notebooks:notebook_detail' post.notebook.id %}" method="get">
+        <button type="submit">노트북으로</button>
+    </form>
+
+    <form action="{% url 'notebooks:post_update' post.id %}" method="get">
+        <button type="submit">수정</button>
+    </form>
+
+    <form id="deleteForm"
+      action="{% url 'notebooks:post_delete' post.id %}" 
+      method="POST">
+        {% csrf_token %}
+        <button type="button" onclick="handleDelete()">포스트 삭제</button>
+    </form>
+</div>
+    
+<hr>
+
+{% if blocks %}
+    {% for block in blocks %}
+        <div style="margin-bottom: 20px;">
+            {% if block.type == 'text' %}
+                <p>{{ block.content|linebreaks }}</p>
+
+            {% elif block.type == 'image' %}
+                {% if block.file %}
+                    <img src="{{ block.file.url }}" alt="이미지" style="max-width: 400px;">
+                {% endif %}
+
+            {% elif block.type == 'video' %}
+                {% if block.file %}
+                    <video controls width="400">
+                        <source src="{{ block.file.url }}">
+                        브라우저가 video 태그를 지원하지 않습니다.
+                    </video>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endfor %}
+{% else %}
+    <p>아직 블록이 없습니다.</p>
+{% endif %}
+
+{% endblock content %}
