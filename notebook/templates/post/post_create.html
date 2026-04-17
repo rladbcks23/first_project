@@ -56,7 +56,7 @@
 {% block content %}
 <h1>새 메모 만들기</h1>
 
-<form actions={% url "notebooks:create" %} method="post">
+<form actions={% url "notebooks:post_create" notebook.id %} method="post">
     {% csrf_token %}
 
     <input

@@ -12,7 +12,7 @@
         {% comment %} 모든 노트북 가져와서 리스트 출력하기 {% endcomment %}
         {% for notebook in notebooks %}
             <li>
-                <strong>{{ notebook.name }}</strong>
+                <a href={% url "notebooks:notebook_detail" notebook.id %}><strong>{{ notebook.name }}</strong></a>
                 <p>게시글 수: {{ notebook.posts.count }}</p>
                 <p>생성일: {{ notebook.created_at|date:"Y-m-d H:i" }}</p>
             </li>

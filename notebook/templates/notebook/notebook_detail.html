@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .button-group {
+        display: flex;
+        gap: 10px;
+    }
+</style>
+{% endblock head %}
+
+{% block content %}
+
+<h1>{{ notebook.name }}</h1>
+<p>생성일: {{ notebook.created_at|date:"Y-m-d H:i" }}</p>
+
+<hr>
+
+<div class='button-group'>
+    <form action="{% url 'notebooks:index' %}">
+        <button>메인으로</button>
+    </form>
+    <form action="{% url 'notebooks:post_create' notebook.id %}">
+        <button>새 글 만들기</button>
+    </form>
+    <form action="{% url 'notebooks:notebook_delete' notebook.id %}">
+        <button >노트북 삭제</button>
+    </form>
+</div>
+
+
+<hr>
+
+<h2>페이지 목록</h2>
+
+{% if posts %}
+    <ul>
+        {% for post in posts %}
+            <li>
+                <a href="{% url 'notebooks:post_detail' post.id %}">
+                    {{ post.title }}
+                </a>
+                <small>({{ post.created_at|date:"Y-m-d H:i" }})</small>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>아직 작성된 페이지가 없습니다.</p>
+{% endif %}
+
+{% endblock content %}
