@@ -7,6 +7,14 @@
     gap: 10px;
 }
 </style>
+
+<script>
+    function handleDelete() {
+        if (confirm("이 노트북을 삭제하시겠습니까?")) {
+            document.getElementById("deleteForm").submit();
+        }
+    }
+</script>
 {% endblock head %}
 
 {% block content %}
@@ -26,8 +34,11 @@
     <form action="{% url 'notebooks:notebook_update' notebook.id %}">
         <button>노트북 수정</button>
     </form>
-    <form action="{% url 'notebooks:notebook_delete' notebook.id %}">
-        <button >노트북 삭제</button>
+    <form id="deleteForm" 
+      action="{% url 'notebooks:notebook_delete' notebook.id %}" 
+      method="POST">
+        {% csrf_token %}
+        <button type="button" onclick="handleDelete()">노트북 삭제</button>
     </form>
 </div>
 

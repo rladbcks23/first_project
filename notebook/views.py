@@ -84,9 +84,18 @@ def notebook_update(request, notebook_id):
         }
         return render(request, 'notebook/notebook_update.html', context)
 
-# 노트북 삭제 ( 동시에 안에 있는 Post 모두 삭제)
+# 노트북 삭제 ( 동시에 안에 있는 Post 모두 삭제 )
+@login_required
 def notebook_delete(request, notebook_id):
-    return 
+    notebook = get_object_or_404(Notebook, id=notebook_id, user=request.user)
+
+    # POST 요청이 있을때만 삭제 가능
+    if request.method == 'POST':
+        notebook.delete()
+        return redirect('notebooks:index')
+    # GET요청 제한 ( 그냥 직접 url치고 들어오면 detail로 반환 )
+    else:
+        return redirect('notebooks:notebook_detail', notebook.id)
 
 # ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ NOTEBOOK ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
