@@ -3,9 +3,14 @@ from django.contrib.auth.decorators import login_required
 from .models import Notebook, Post, Block
 from .forms import NotebookForm
 
+# @login_required
+# 이 문자는 로그인확인을 위한 데코레이터로
+# 포스트나 노트북은 각 계정마다 본인의 노트북과 포스트가 보여야 하기때문에 
+# 넣었음 
+
 # ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ MAIN ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
-@login_required # 로그인 확인
+@login_required
 # 메인 화면
 def index(request):
     # 로그인 성공시
@@ -43,8 +48,16 @@ def notebook_create(request):
         return render(request, 'notebook/notebook_create.html', context)
 
 # 노트북 안에 있는 Post들 보기
+@login_required
 def notebook_detail(request, notebook_id):
-    return
+    notebook = get_object_or_404(Notebook, id=notebook_id, user=request.user)
+    posts = notebook.posts.all().order_by('-created_at')
+
+    context = {
+        'notebook': notebook,
+        'posts': posts,
+    }
+    return render(request, 'notebook/notebook_detail.html', context)
 
 # 노트북 수정( 뭐 순서라든가, 안에 Post 삭제라든가, Post Notebook 옮기기라든가)
 def notebook_update(request, notebook_id):
@@ -85,11 +98,10 @@ def post_create(request, notebook_id):
         return redirect('notebooks:index')
     # 
     else:
-        form = NotebookForm()
         context = {
-            'form' : form
+            'notebook' : notebook,
         }
-        return render(request, 'notebook/post_create.html', context)
+        return render(request, 'post/post_create.html', context)
 
 # Post 세부정보 보기 ( 정리해놓은 block들 보기 )
 def post_detail(request, post_id):
