@@ -4,32 +4,70 @@
 <title>{{ post.title }}</title>
 
 <style>
-.button-group {
-    display: flex;
-    gap: 10px;
-}
+    body {
+        max-width: 1000px;
+        margin: 40px auto;
+        font-family: Arial, sans-serif;
+    }
+
+    h1 {
+        margin-bottom: 20px;
+    }
+
+    .meta-box {
+        margin: 20px 0;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .block-list {
+        margin-top: 24px;
+    }
+
+    .block-item {
+        margin-bottom: 24px;
+        padding: 14px;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        background: #fafafa;
+    }
+
+    .block-item img,
+    .block-item video {
+        max-width: 420px;
+        display: block;
+        border-radius: 8px;
+    }
+
+    .empty-text {
+        color: #666;
+    }
 </style>
 
 <script>
     function handleDelete() {
-        if (confirm("이 노트북을 삭제하시겠습니까?")) {
+        if (confirm("이 포스트를 삭제하시겠습니까?")) {
             document.getElementById("deleteForm").submit();
         }
     }
 </script>
-
 {% endblock head %}
-    
 
 {% block content %}
 <h1>{{ post.title }}</h1>
 
 <hr>
 
-<p>노트북: {{ post.notebook.name }}</p>
-<p>작성일: {{ post.created_at|date:"Y-m-d H:i" }}</p>
+<div class="meta-box">
+    <p>노트북: {{ post.notebook.name }}</p>
+    <p>작성일: {{ post.created_at|date:"Y-m-d H:i" }}</p>
+</div>
 
-<div class='button-group'>
+<div class="button-group">
     <form action="{% url 'notebooks:notebook_detail' post.notebook.id %}" method="get">
         <button type="submit">노트북으로</button>
     </form>
@@ -38,39 +76,43 @@
         <button type="submit">수정</button>
     </form>
 
-    <form id="deleteForm"
-      action="{% url 'notebooks:post_delete' post.id %}" 
-      method="POST">
+    <form id="deleteForm" action="{% url 'notebooks:post_delete' post.id %}" method="POST">
         {% csrf_token %}
         <button type="button" onclick="handleDelete()">포스트 삭제</button>
     </form>
 </div>
-    
+
 <hr>
 
-{% if blocks %}
-    {% for block in blocks %}
-        <div style="margin-bottom: 20px;">
-            {% if block.type == 'text' %}
-                <p>{{ block.content|linebreaks }}</p>
+<div class="block-list">
+    {% if blocks %}
+        {% for block in blocks %}
+            <div class="block-item">
+                {% if block.block_type == 'text' %}
+                    <p>{{ block.content|linebreaks }}</p>
 
-            {% elif block.type == 'image' %}
-                {% if block.file %}
-                    <img src="{{ block.file.url }}" alt="이미지" style="max-width: 400px;">
+                {% elif block.block_type == 'image' %}
+                    {% if block.image_file %}
+                        <img src="{{ block.image_file.url }}" alt="이미지 블록">
+                    {% elif block.content %}
+                        <img src="{{ block.content }}" alt="이미지 블록">
+                    {% endif %}
+
+                {% elif block.block_type == 'video' %}
+                    {% if block.video_file %}
+                        <video controls>
+                            <source src="{{ block.video_file.url }}">
+                        </video>
+                    {% elif block.content %}
+                        <video controls>
+                            <source src="{{ block.content }}">
+                        </video>
+                    {% endif %}
                 {% endif %}
-
-            {% elif block.type == 'video' %}
-                {% if block.file %}
-                    <video controls width="400">
-                        <source src="{{ block.file.url }}">
-                        브라우저가 video 태그를 지원하지 않습니다.
-                    </video>
-                {% endif %}
-            {% endif %}
-        </div>
-    {% endfor %}
-{% else %}
-    <p>아직 블록이 없습니다.</p>
-{% endif %}
-
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-text">아직 블록이 없습니다.</p>
+    {% endif %}
+</div>
 {% endblock content %}

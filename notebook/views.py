@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Notebook, Post, Block
 from .forms import NotebookForm
+import re
 
 # @login_required
 # 이 문자는 로그인확인을 위한 데코레이터로
@@ -106,39 +107,85 @@ def notebook_delete(request, notebook_id):
 # Post 생성
 @login_required
 def post_create(request, notebook_id):
-    # 맞지 않는 값이 있으면 404반환
+    # 노트북 가져오기
     notebook = get_object_or_404(Notebook, id=notebook_id, user=request.user)
-    # 흐름 : Notebook → Post → Block        
-    # 그래서 Post를 먼저 만들고 Post의 pk에 block을 만듦
-    # POST 요청일 시(값이 들어왔다는 뜻) 
-    if request.method == 'POST':
-        # 값 받아오기
-        title = request.POST.get('title')
-        block_types = request.POST.getlist('block_type')
-        block_contents = request.POST.getlist('block_content')
 
-        # Post 객체 생성( Block은 반드시 Post에 속해야 한다 )
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+
+        # post 가져오기
         post = Post.objects.create(notebook=notebook, title=title)
 
-        # 받아온 값 순회해서 block 객체 생성
-        for i, (b_type, b_content) in enumerate(zip(block_types, block_contents)):
-            if b_content.strip():   # 빈 블록 제거
-                # block 생성
-                Block.objects.create(post=post, type=b_type, content=b_content, order=i)
+        # blocks 데이터를 index 기준으로 묶기 위한 dict
+        block_data = {}
 
-        # 노트북 detail로 돌아가기
-        return redirect('notebooks:notebook_detail', notebook_id)
-    # Post 생성하러 가기
+        # 1. POST 데이터 파싱
+        for key, value in request.POST.items():
+            # blocks[num][type], blocks[num][content] 같은 구조
+            # 여기서 num은 몇번째 블록인지를 뜻함
+            match = re.match(r'^blocks\[(\d+)\]\[(type|content)\]$', key)
+            if match:
+                idx, field = match.groups()
+                idx = int(idx)
+
+                block_data.setdefault(idx, {})
+                block_data[idx][field] = value
+
+        # 2. FILE 데이터 파싱
+        for key, uploaded_file in request.FILES.items():
+            # blocks[0][image] or blocks[0][video]
+            match = re.match(r'^blocks\[(\d+)\]\[(image|video)\]$', key)
+            if match:
+                idx, field = match.groups()
+                idx = int(idx)
+                # default값 삽입 후 값 사입
+                block_data.setdefault(idx, {})
+                block_data[idx][field] = uploaded_file
+
+        # 3. 각 블록의 유형에 따라 순서대로 block 생성
+        for order, idx in enumerate(sorted(block_data.keys())):
+        # order는 block 순서를 뜻함 --> 순서대로 block 생성
+            item = block_data[idx]
+            block_type = item.get('type')
+
+            # 텍스트 블록
+            if block_type == 'text':
+                content = item.get('content', '').strip()
+                if not content:
+                    continue
+
+                Block.objects.create(post=post, block_type='text', content=content, order=order)
+
+            # 이미지 블록
+            elif block_type == 'image':
+                image = item.get('image')
+                if not image:
+                    continue
+
+                Block.objects.create(post=post, block_type='image', image_file=image, order=order)
+
+            # 비디오 블록
+            elif block_type == 'video':
+                video = item.get('video')
+                if not video:
+                    continue
+
+                # # 용량 제한 예시
+                # if video.size > 50 * 1024 * 1024:
+                #     continue
+
+                Block.objects.create(post=post, block_type='video', video_file=video, order=order)
+        # 저장 후 detail화면 반환
+        return redirect('notebooks:post_detail', post.id)
+    # GET 요청으로 들어올 시
     else:
-        context = {
-            'notebook' : notebook,
-        }
-        return render(request, 'post/post_create.html', context)
+        return render(request, 'post/post_create.html', {'notebook': notebook})
 
 # Post 세부정보 보기 ( 정리해놓은 block들 보기 )
 @login_required
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id, notebook__user=request.user)
+    # order 기준 정렬 
     blocks = post.blocks.all().order_by('order')
     # post랑 post에 있는 block들 불러오기
 
@@ -154,37 +201,111 @@ def post_detail(request, post_id):
 @login_required
 def post_update(request, post_id):
     post = get_object_or_404(Post, id=post_id, notebook__user=request.user)
-    # post 가져오기
 
-    # POST 요청일 경우( 값이 있음 )
     if request.method == 'POST':
-        title = request.POST.get('title')
-        block_types = request.POST.getlist('block_type')
-        block_contents = request.POST.getlist('block_content')
-        # 새로운 값들 받아오기
-
-        post.title = title
+        post.title = request.POST.get('title', '').strip()
         post.save()
-        # 제목 수정 후 post 저장
 
+        block_data = {}
+
+        # 1. text / hidden 값 파싱
+        # blocks[0][type], blocks[0][content], blocks[0][current_image_url], blocks[0][current_video_url]
+        for key, value in request.POST.items():
+            match = re.match(
+                r'^blocks\[(\d+)\]\[(type|content|current_image_url|current_video_url)\]$',
+                key
+            )
+            if match:
+                idx, field = match.groups()
+                idx = int(idx)
+                block_data.setdefault(idx, {})
+                block_data[idx][field] = value
+
+        # 2. 새로 업로드한 파일 파싱
+        # blocks[0][image], blocks[0][video]
+        for key, uploaded_file in request.FILES.items():
+            match = re.match(r'^blocks\[(\d+)\]\[(image|video)\]$', key)
+            if match:
+                idx, field = match.groups()
+                idx = int(idx)
+                block_data.setdefault(idx, {})
+                block_data[idx][field] = uploaded_file
+
+        # 기존 블록 삭제
+        # 주의: 아래에서 기존 파일 URL을 hidden input으로 받아서 다시 재생성함
         post.blocks.all().delete()
-        # post에 있는 모든 block 삭제
 
-        # 수정시 만든 block 생성
-        for i, (b_type, b_content) in enumerate(zip(block_types, block_contents)):
-            if b_content.strip():
-                Block.objects.create(post=post,type=b_type,content=b_content,order=i)
+        # 3. block 재생성
+        for order, idx in enumerate(sorted(block_data.keys())):
+            item = block_data[idx]
+            block_type = item.get('type')
+
+            if block_type == 'text':
+                content = item.get('content', '').strip()
+                if not content:
+                    continue
+
+                Block.objects.create(
+                    post=post,
+                    block_type='text',
+                    content=content,
+                    order=order,
+                )
+
+            elif block_type == 'image':
+                image = item.get('image')
+
+                # 새 파일이 있으면 그걸 저장
+                if image:
+                    Block.objects.create(
+                        post=post,
+                        block_type='image',
+                        image_file=image,
+                        order=order,
+                    )
+                    continue
+
+                # 새 파일이 없으면 기존 이미지 URL 유지
+                current_image_url = item.get('current_image_url', '').strip()
+                if current_image_url:
+                    Block.objects.create(
+                        post=post,
+                        block_type='image',
+                        content=current_image_url,
+                        order=order,
+                    )
+
+            elif block_type == 'video':
+                video = item.get('video')
+
+                # 새 파일이 있으면 그걸 저장
+                if video:
+                    Block.objects.create(
+                        post=post,
+                        block_type='video',
+                        video_file=video,
+                        order=order,
+                    )
+                    continue
+
+                # 새 파일이 없으면 기존 비디오 URL 유지
+                current_video_url = item.get('current_video_url', '').strip()
+                if current_video_url:
+                    Block.objects.create(
+                        post=post,
+                        block_type='video',
+                        content=current_video_url,
+                        order=order,
+                    )
 
         return redirect('notebooks:post_detail', post.id)
-    # 그냥 url 치고 들어오는거 방지
+
     else:
         blocks = post.blocks.all().order_by('order')
-        # 기존 블록들 가져오기
         context = {
             'post': post,
-            'blocks': blocks,
+            'blocks': blocks,   # 여기 중요: block 이 아니라 blocks
         }
-        # 값 넘기기
         return render(request, 'post/post_update.html', context)
 
 # Post 삭제( 동시에 안에있는 block들까지 모두 삭제 )
@@ -192,7 +313,7 @@ def post_update(request, post_id):
 def post_delete(request, post_id):
     post = get_object_or_404(Post, id=post_id, notebook__user=request.user)
     # notebook__user : 언더바가 2개인 이유는 관계를 따라간다는 뜻
-    # --> Post의 notebook의 user가 request.user인 것만 가져와라
+    # --> Post의 notebook의 user가 request.user인 것만 가져와라( == 본인인증 )
 
     notebook_id = post.notebook.id
     # post 삭제하면 notebook으로 돌아가야하는데 그 id 받아오기

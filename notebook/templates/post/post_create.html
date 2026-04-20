@@ -1,121 +1,171 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
+
 {% block head %}
+<title>새 메모 만들기</title>
+
 <style>
-        body {
-            max-width: 800px;
-            margin: 40px auto;
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-        }
+    body {
+        max-width: 1000px;
+        margin: 40px auto;
+        font-family: Arial, sans-serif;
+    }
 
-        .title-input {
-            width: 100%;
-            font-size: 28px;
-            padding: 12px;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-        }
+    h1 {
+        margin-bottom: 28px;
+    }
 
-        .block {
-            margin-bottom: 16px;
-        }
+    .title-input {
+        width: 100%;
+        font-size: 28px;
+        padding: 18px 16px;
+        margin-bottom: 24px;
+        box-sizing: border-box;
+    }
 
-        .block textarea {
-            width: 100%;
-            min-height: 100px;
-            padding: 12px;
-            font-size: 16px;
-            box-sizing: border-box;
-            resize: vertical;
-        }
+    .top-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
 
-        .block-actions {
-            margin-top: 8px;
-        }
+    .block-item {
+        margin-bottom: 24px;
+        padding: 14px;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        background: #fafafa;
+    }
 
-        .add-btn, .save-btn, .delete-btn {
-            padding: 8px 14px;
-            font-size: 14px;
-            cursor: pointer;
-        }
+    .block-item textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 12px;
+        font-size: 16px;
+        box-sizing: border-box;
+        resize: vertical;
+    }
 
-        .add-btn {
-            margin-top: 12px;
-        }
+    .preview-area {
+        margin-top: 14px;
+    }
 
-        .save-btn {
-            margin-top: 24px;
-        }
+    .preview-area img,
+    .preview-area video {
+        max-width: 320px;
+        display: block;
+        border-radius: 8px;
+    }
 
-        .delete-btn {
-            margin-left: 8px;
-        }
-    </style>
+    .submit-btn {
+        margin-top: 16px;
+    }
+</style>
 {% endblock head %}
 
 {% block content %}
 <h1>새 메모 만들기</h1>
 
-<form actions={% url "notebooks:post_create" notebook.id %} method="post">
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
     <input
+        class="title-input"
         type="text"
         name="title"
-        class="title-input"
-        placeholder="제목을 입력하세요"
+        placeholder="제목"
     >
 
-    <div id="block-container">
-        <div class="block">
-            <input type="hidden" name="block_type" value="text">
-            <textarea name="block_content" placeholder="내용을 입력하세요"></textarea>
-            <div class="block-actions">
-                <button type="button" class="delete-btn">삭제</button>
-            </div>
-        </div>
+    <div class="top-actions">
+        <select id="block-type-select">
+            <option value="text">텍스트</option>
+            <option value="image">이미지</option>
+            <option value="video">동영상</option>
+        </select>
+        <button type="button" id="add-block-btn">블록 추가</button>
     </div>
 
-    <button type="button" class="add-btn" id="add-block-btn">+ 블록 추가</button>
-    <br>
-    <button type="submit" class="save-btn">저장</button>
+    <div id="block-container"></div>
+
+    <button class="submit-btn" type="submit">저장</button>
 </form>
 
 <script>
+    let blockIndex = 0;
+
     const blockContainer = document.getElementById('block-container');
-    const addBlockBtn = document.getElementById('add-block-btn');
+    const addBtn = document.getElementById('add-block-btn');
+    const select = document.getElementById('block-type-select');
 
-    function createTextBlock() {
-        const blockDiv = document.createElement('div');
-        blockDiv.className = 'block';
+    function createBlockHtml(type, index) {
+        if (type === 'text') {
+            return `
+                <div class="block-item">
+                    <input type="hidden" name="blocks[${index}][type]" value="text">
+                    <textarea name="blocks[${index}][content]" placeholder="텍스트를 입력하세요"></textarea>
+                </div>
+            `;
+        }
 
-        blockDiv.innerHTML = `
-            <input type="hidden" name="block_type" value="text">
-            <textarea name="block_content" placeholder="내용을 입력하세요"></textarea>
-            <div class="block-actions">
-                <button type="button" class="delete-btn">삭제</button>
-            </div>
-        `;
+        if (type === 'image') {
+            return `
+                <div class="block-item">
+                    <input type="hidden" name="blocks[${index}][type]" value="image">
+                    <p>이미지 업로드</p>
+                    <input type="file" name="blocks[${index}][image]" accept="image/*">
+                    <div class="preview-area"></div>
+                </div>
+            `;
+        }
 
-        const deleteBtn = blockDiv.querySelector('.delete-btn');
-        deleteBtn.addEventListener('click', function () {
-            blockDiv.remove();
-        });
+        if (type === 'video') {
+            return `
+                <div class="block-item">
+                    <input type="hidden" name="blocks[${index}][type]" value="video">
+                    <p>동영상 업로드</p>
+                    <input type="file" name="blocks[${index}][video]" accept="video/*">
+                    <div class="preview-area"></div>
+                </div>
+            `;
+        }
 
-        return blockDiv;
+        return '';
     }
 
-    addBlockBtn.addEventListener('click', function () {
-        const newBlock = createTextBlock();
-        blockContainer.appendChild(newBlock);
+    addBtn.addEventListener('click', function () {
+        const type = select.value;
+        const html = createBlockHtml(type, blockIndex);
+        blockContainer.insertAdjacentHTML('beforeend', html);
+        blockIndex++;
     });
 
-    document.querySelectorAll('.delete-btn').forEach(function (button) {
-        button.addEventListener('click', function () {
-            button.closest('.block').remove();
-        });
-    });
+    blockContainer.addEventListener('change', function (e) {
+        const target = e.target;
 
+        if (target.type !== 'file') return;
+        if (!target.files || !target.files[0]) return;
+
+        const file = target.files[0];
+        const blockItem = target.closest('.block-item');
+        if (!blockItem) return;
+
+        const previewArea = blockItem.querySelector('.preview-area');
+        if (!previewArea) return;
+
+        previewArea.innerHTML = '';
+        const fileUrl = URL.createObjectURL(file);
+
+        if (target.name.includes('[image]')) {
+            const img = document.createElement('img');
+            img.src = fileUrl;
+            previewArea.appendChild(img);
+        }
+
+        if (target.name.includes('[video]')) {
+            const video = document.createElement('video');
+            video.src = fileUrl;
+            video.controls = true;
+            previewArea.appendChild(video);
+        }
+    });
 </script>
-
 {% endblock content %}

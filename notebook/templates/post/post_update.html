@@ -5,106 +5,244 @@
 
 <style>
     body {
-        max-width: 800px;
+        max-width: 1000px;
         margin: 40px auto;
         font-family: Arial, sans-serif;
+    }
+
+    h1 {
+        margin-bottom: 28px;
     }
 
     .title-input {
         width: 100%;
         font-size: 28px;
-        padding: 12px;
-        margin-bottom: 20px;
+        padding: 18px 16px;
+        margin-bottom: 24px;
         box-sizing: border-box;
     }
 
-    .block {
-        margin-bottom: 16px;
+    .top-actions {
+        display: flex;
+        gap: 10px;
+        margin: 16px 0 20px;
     }
 
-    .block textarea {
+    .block-item {
+        margin-bottom: 24px;
+        padding: 14px;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        background: #fafafa;
+    }
+
+    .block-item textarea {
         width: 100%;
-        min-height: 100px;
+        min-height: 120px;
         padding: 12px;
         font-size: 16px;
         box-sizing: border-box;
         resize: vertical;
     }
 
-    .button-group {
-        display: flex;
-        gap: 10px;
-        margin-top: 20px;
+    .block-preview,
+    .preview-area {
+        margin-top: 14px;
+    }
+
+    .block-preview img,
+    .block-preview video,
+    .preview-area img,
+    .preview-area video {
+        max-width: 320px;
+        display: block;
+        border-radius: 8px;
+    }
+
+    .submit-btn {
+        margin-top: 16px;
     }
 </style>
-
 {% endblock head %}
 
-
-
 {% block content %}
-
 <h1>글 수정</h1>
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
     <input
+        class="title-input"
         type="text"
         name="title"
-        class="title-input"
         value="{{ post.title }}"
-        placeholder="제목을 입력하세요"
+        placeholder="제목"
     >
+
+    <div class="top-actions">
+        <select id="block-type-select">
+            <option value="text">텍스트</option>
+            <option value="image">이미지</option>
+            <option value="video">동영상</option>
+        </select>
+        <button type="button" id="add-block-btn">블록 추가</button>
+    </div>
 
     <div id="block-container">
         {% for block in blocks %}
-            <div class="block">
-                <input type="hidden" name="block_type" value="{{ block.type }}">
-                <textarea name="block_content" placeholder="내용을 입력하세요">{{ block.content }}</textarea>
-                <button type="button" class="delete-btn">삭제</button>
+            <div class="block-item">
+                <input type="hidden" name="blocks[{{ forloop.counter0 }}][type]" value="{{ block.block_type }}">
+
+                {% if block.block_type == 'text' %}
+                    <textarea
+                        name="blocks[{{ forloop.counter0 }}][content]"
+                        placeholder="텍스트를 입력하세요"
+                    >{{ block.content }}</textarea>
+
+                {% elif block.block_type == 'image' %}
+                    {% if block.image_file %}
+                        <input
+                            type="hidden"
+                            name="blocks[{{ forloop.counter0 }}][current_image_url]"
+                            value="{{ block.image_file.url }}"
+                        >
+                    {% elif block.content %}
+                        <input
+                            type="hidden"
+                            name="blocks[{{ forloop.counter0 }}][current_image_url]"
+                            value="{{ block.content }}"
+                        >
+                    {% endif %}
+
+                    <p>현재 이미지</p>
+                    <div class="block-preview">
+                        {% if block.image_file %}
+                            <img src="{{ block.image_file.url }}" alt="현재 이미지">
+                        {% elif block.content %}
+                            <img src="{{ block.content }}" alt="현재 이미지">
+                        {% endif %}
+                    </div>
+
+                    <input
+                        type="file"
+                        name="blocks[{{ forloop.counter0 }}][image]"
+                        accept="image/*"
+                    >
+                    <div class="preview-area"></div>
+
+                {% elif block.block_type == 'video' %}
+                    {% if block.video_file %}
+                        <input
+                            type="hidden"
+                            name="blocks[{{ forloop.counter0 }}][current_video_url]"
+                            value="{{ block.video_file.url }}"
+                        >
+                    {% elif block.content %}
+                        <input
+                            type="hidden"
+                            name="blocks[{{ forloop.counter0 }}][current_video_url]"
+                            value="{{ block.content }}"
+                        >
+                    {% endif %}
+
+                    <p>현재 동영상</p>
+                    <div class="block-preview">
+                        {% if block.video_file %}
+                            <video controls>
+                                <source src="{{ block.video_file.url }}">
+                            </video>
+                        {% elif block.content %}
+                            <video controls>
+                                <source src="{{ block.content }}">
+                            </video>
+                        {% endif %}
+                    </div>
+
+                    <input
+                        type="file"
+                        name="blocks[{{ forloop.counter0 }}][video]"
+                        accept="video/*"
+                    >
+                    <div class="preview-area"></div>
+                {% endif %}
             </div>
         {% endfor %}
     </div>
 
-    <div class="button-group">
-        <button type="button" id="add-block-btn">+ 블록 추가</button>
-        <button type="submit">수정 완료</button>
-    </div>
+    <button class="submit-btn" type="submit">수정 완료</button>
 </form>
 
 <script>
+    let blockIndex = {{ blocks|length }};
+
     const blockContainer = document.getElementById('block-container');
-    const addBlockBtn = document.getElementById('add-block-btn');
+    const addBtn = document.getElementById('add-block-btn');
+    const select = document.getElementById('block-type-select');
 
-    function createTextBlock(value = '') {
-        const blockDiv = document.createElement('div');
-        blockDiv.className = 'block';
+    addBtn.addEventListener('click', function () {
+        const type = select.value;
+        const index = blockIndex++;
 
-        blockDiv.innerHTML = `
-            <input type="hidden" name="block_type" value="text">
-            <textarea name="block_content" placeholder="내용을 입력하세요">${value}</textarea>
-            <button type="button" class="delete-btn">삭제</button>
-        `;
+        let html = '';
 
-        const deleteBtn = blockDiv.querySelector('.delete-btn');
-        deleteBtn.addEventListener('click', function () {
-            blockDiv.remove();
-        });
+        if (type === 'text') {
+            html = `
+                <div class="block-item">
+                    <input type="hidden" name="blocks[${index}][type]" value="text">
+                    <textarea name="blocks[${index}][content]" placeholder="텍스트를 입력하세요"></textarea>
+                </div>
+            `;
+        } else if (type === 'image') {
+            html = `
+                <div class="block-item">
+                    <input type="hidden" name="blocks[${index}][type]" value="image">
+                    <p>현재 이미지</p>
+                    <input type="file" name="blocks[${index}][image]" accept="image/*">
+                    <div class="preview-area"></div>
+                </div>
+            `;
+        } else if (type === 'video') {
+            html = `
+                <div class="block-item">
+                    <input type="hidden" name="blocks[${index}][type]" value="video">
+                    <p>현재 동영상</p>
+                    <input type="file" name="blocks[${index}][video]" accept="video/*">
+                    <div class="preview-area"></div>
+                </div>
+            `;
+        }
 
-        return blockDiv;
-    }
-
-    addBlockBtn.addEventListener('click', function () {
-        const newBlock = createTextBlock();
-        blockContainer.appendChild(newBlock);
+        blockContainer.insertAdjacentHTML('beforeend', html);
     });
 
-    document.querySelectorAll('.delete-btn').forEach(function (button) {
-        button.addEventListener('click', function () {
-            button.closest('.block').remove();
-        });
+    blockContainer.addEventListener('change', function (e) {
+        const target = e.target;
+
+        if (target.type !== 'file') return;
+        if (!target.files || !target.files[0]) return;
+
+        const file = target.files[0];
+        const blockItem = target.closest('.block-item');
+        if (!blockItem) return;
+
+        const previewArea = blockItem.querySelector('.preview-area');
+        if (!previewArea) return;
+
+        previewArea.innerHTML = '';
+        const fileUrl = URL.createObjectURL(file);
+
+        if (target.name.includes('[image]')) {
+            const img = document.createElement('img');
+            img.src = fileUrl;
+            previewArea.appendChild(img);
+        }
+
+        if (target.name.includes('[video]')) {
+            const video = document.createElement('video');
+            video.src = fileUrl;
+            video.controls = true;
+            previewArea.appendChild(video);
+        }
     });
 </script>
-
 {% endblock content %}
