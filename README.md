@@ -15,8 +15,13 @@ account 같은 경우는 온전히 AI를 사용했고 주석은 AI에게 묻지 
 
 
 
+진행도
+
+기본적인 노트북, 포스트의 CRUD, 로그인 완성
+이제 블록마다 유형을 정할 수 있게 하고 이미지파일을 S3를 이용해서 업로드하고 Django와 연결하기
+
+
 
 
 설치된 lib
-django, ipython
-
+django, ipython, boto3, storages
