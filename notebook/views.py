@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Notebook, Post, Block
-from .forms import NotebookForm
+from .forms import NotebookForm, PostForm
 import re
 
 # @login_required
@@ -111,75 +111,77 @@ def post_create(request, notebook_id):
     notebook = get_object_or_404(Notebook, id=notebook_id, user=request.user)
 
     if request.method == 'POST':
-        title = request.POST.get('title', '').strip()
+        form = PostForm(request.POST)
 
-        # post 가져오기
-        post = Post.objects.create(notebook=notebook, title=title)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.notebook = notebook
+            post.save()
 
-        # blocks 데이터를 index 기준으로 묶기 위한 dict
-        block_data = {}
+            block_data = {}
 
-        # 1. POST 데이터 파싱
-        for key, value in request.POST.items():
-            # blocks[num][type], blocks[num][content] 같은 구조
-            # 여기서 num은 몇번째 블록인지를 뜻함
-            match = re.match(r'^blocks\[(\d+)\]\[(type|content)\]$', key)
-            if match:
-                idx, field = match.groups()
-                idx = int(idx)
+            for key, value in request.POST.items():
+                match = re.match(r'^blocks\[(\d+)\]\[(type|content)\]$', key)
+                if match:
+                    idx, field = match.groups()
+                    idx = int(idx)
+                    block_data.setdefault(idx, {})
+                    block_data[idx][field] = value
 
-                block_data.setdefault(idx, {})
-                block_data[idx][field] = value
+            for key, uploaded_file in request.FILES.items():
+                match = re.match(r'^blocks\[(\d+)\]\[(image|video)\]$', key)
+                if match:
+                    idx, field = match.groups()
+                    idx = int(idx)
+                    block_data.setdefault(idx, {})
+                    block_data[idx][field] = uploaded_file
 
-        # 2. FILE 데이터 파싱
-        for key, uploaded_file in request.FILES.items():
-            # blocks[0][image] or blocks[0][video]
-            match = re.match(r'^blocks\[(\d+)\]\[(image|video)\]$', key)
-            if match:
-                idx, field = match.groups()
-                idx = int(idx)
-                # default값 삽입 후 값 사입
-                block_data.setdefault(idx, {})
-                block_data[idx][field] = uploaded_file
+            for order, idx in enumerate(sorted(block_data.keys())):
+                item = block_data[idx]
+                block_type = item.get('type')
 
-        # 3. 각 블록의 유형에 따라 순서대로 block 생성
-        for order, idx in enumerate(sorted(block_data.keys())):
-        # order는 block 순서를 뜻함 --> 순서대로 block 생성
-            item = block_data[idx]
-            block_type = item.get('type')
+                if block_type == 'text':
+                    content = item.get('content', '').strip()
+                    if not content:
+                        continue
+                    Block.objects.create(
+                        post=post,
+                        block_type='text',
+                        content=content,
+                        order=order
+                    )
 
-            # 텍스트 블록
-            if block_type == 'text':
-                content = item.get('content', '').strip()
-                if not content:
-                    continue
+                elif block_type == 'image':
+                    image = item.get('image')
+                    if not image:
+                        continue
+                    Block.objects.create(
+                        post=post,
+                        block_type='image',
+                        image_file=image,
+                        order=order
+                    )
 
-                Block.objects.create(post=post, block_type='text', content=content, order=order)
+                elif block_type == 'video':
+                    video = item.get('video')
+                    if not video:
+                        continue
+                    Block.objects.create(
+                        post=post,
+                        block_type='video',
+                        video_file=video,
+                        order=order
+                    )
 
-            # 이미지 블록
-            elif block_type == 'image':
-                image = item.get('image')
-                if not image:
-                    continue
+            return redirect('notebooks:post_detail', post.id)
 
-                Block.objects.create(post=post, block_type='image', image_file=image, order=order)
-
-            # 비디오 블록
-            elif block_type == 'video':
-                video = item.get('video')
-                if not video:
-                    continue
-
-                # # 용량 제한 예시
-                # if video.size > 50 * 1024 * 1024:
-                #     continue
-
-                Block.objects.create(post=post, block_type='video', video_file=video, order=order)
-        # 저장 후 detail화면 반환
-        return redirect('notebooks:post_detail', post.id)
-    # GET 요청으로 들어올 시
     else:
-        return render(request, 'post/post_create.html', {'notebook': notebook})
+        form = PostForm()
+
+    return render(request, 'post/post_create.html', {
+        'notebook': notebook,
+        'form': form,
+    })
 
 # Post 세부정보 보기 ( 정리해놓은 block들 보기 )
 @login_required
@@ -205,6 +207,16 @@ def post_update(request, post_id):
     post = get_object_or_404(Post, id=post_id, notebook__user=request.user)
 
     if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+
+        if not title:
+            blocks = post.blocks.all().order_by('order')
+            context = {
+                'post': post,
+                'blocks': blocks,
+            }
+            return render(request, 'post/post_update.html', context)
+
         post.title = request.POST.get('title', '').strip()
         post.save()
 
