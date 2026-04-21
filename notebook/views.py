@@ -185,13 +185,15 @@ def post_create(request, notebook_id):
 @login_required
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id, notebook__user=request.user)
-    # order 기준 정렬 
+    # order 기준 정렬
     blocks = post.blocks.all().order_by('order')
-    # post랑 post에 있는 block들 불러오기
+    notebook = post.notebook
+    # 값 가져오기
 
     context = {
         'post': post,
         'blocks': blocks,
+        'notebook': notebook,
     }
     # 값 넘기기
     return render(request, 'post/post_detail.html', context)
@@ -206,107 +208,76 @@ def post_update(request, post_id):
         post.title = request.POST.get('title', '').strip()
         post.save()
 
-        block_data = {}
+        index = 0
+        kept_block_ids = []
 
-        # 1. text / hidden 값 파싱
-        # blocks[0][type], blocks[0][content], blocks[0][current_image_url], blocks[0][current_video_url]
-        for key, value in request.POST.items():
-            match = re.match(
-                r'^blocks\[(\d+)\]\[(type|content|current_image_url|current_video_url)\]$',
-                key
-            )
-            if match:
-                idx, field = match.groups()
-                idx = int(idx)
-                block_data.setdefault(idx, {})
-                block_data[idx][field] = value
+        while True:
+            block_type = request.POST.get(f'blocks[{index}][type]')
+            if block_type is None:
+                break
 
-        # 2. 새로 업로드한 파일 파싱
-        # blocks[0][image], blocks[0][video]
-        for key, uploaded_file in request.FILES.items():
-            match = re.match(r'^blocks\[(\d+)\]\[(image|video)\]$', key)
-            if match:
-                idx, field = match.groups()
-                idx = int(idx)
-                block_data.setdefault(idx, {})
-                block_data[idx][field] = uploaded_file
+            block_id = request.POST.get(f'blocks[{index}][id]')
+            delete_flag = request.POST.get(f'blocks[{index}][delete]', '0')
 
-        # 기존 블록 삭제
-        # 주의: 아래에서 기존 파일 URL을 hidden input으로 받아서 다시 재생성함
-        post.blocks.all().delete()
+            # 삭제 요청이면 기존 블록 삭제
+            if delete_flag == '1':
+                if block_id:
+                    Block.objects.filter(id=block_id, post=post).delete()
+                index += 1
+                continue
 
-        # 3. block 재생성
-        for order, idx in enumerate(sorted(block_data.keys())):
-            item = block_data[idx]
-            block_type = item.get('type')
+            # 기존 블록 수정 or 새 블록 생성
+            if block_id:
+                block = get_object_or_404(Block, id=block_id, post=post)
+            else:
+                block = Block(post=post)
+
+            block.block_type = block_type
+            block.order = index
 
             if block_type == 'text':
-                content = item.get('content', '').strip()
-                if not content:
-                    continue
-
-                Block.objects.create(
-                    post=post,
-                    block_type='text',
-                    content=content,
-                    order=order,
-                )
+                block.content = request.POST.get(f'blocks[{index}][content]', '')
+                # 텍스트 블록이면 파일 필드는 비움
+                block.image_file = None
+                block.video_file = None
 
             elif block_type == 'image':
-                image = item.get('image')
+                new_image = request.FILES.get(f'blocks[{index}][image]')
 
-                # 새 파일이 있으면 그걸 저장
-                if image:
-                    Block.objects.create(
-                        post=post,
-                        block_type='image',
-                        image_file=image,
-                        order=order,
-                    )
-                    continue
+                # 새 이미지가 있을 때만 교체
+                if new_image:
+                    block.image_file = new_image
 
-                # 새 파일이 없으면 기존 이미지 URL 유지
-                current_image_url = item.get('current_image_url', '').strip()
-                if current_image_url:
-                    Block.objects.create(
-                        post=post,
-                        block_type='image',
-                        content=current_image_url,
-                        order=order,
-                    )
+                # 이미지 블록이면 content는 비워도 됨
+                block.content = ''
+                block.video_file = None
 
             elif block_type == 'video':
-                video = item.get('video')
+                new_video = request.FILES.get(f'blocks[{index}][video]')
 
-                # 새 파일이 있으면 그걸 저장
-                if video:
-                    Block.objects.create(
-                        post=post,
-                        block_type='video',
-                        video_file=video,
-                        order=order,
-                    )
-                    continue
+                # 새 동영상이 있을 때만 교체
+                if new_video:
+                    block.video_file = new_video
 
-                # 새 파일이 없으면 기존 비디오 URL 유지
-                current_video_url = item.get('current_video_url', '').strip()
-                if current_video_url:
-                    Block.objects.create(
-                        post=post,
-                        block_type='video',
-                        content=current_video_url,
-                        order=order,
-                    )
+                block.content = ''
+                block.image_file = None
+
+            block.save()
+            kept_block_ids.append(block.id)
+            index += 1
+
+        # 현재 폼에 없는 기존 블록 정리하고 싶으면 아래 사용
+        # 단, delete 플래그 방식이면 보통 없어도 됨
+        # Block.objects.filter(post=post).exclude(id__in=kept_block_ids).delete()
 
         return redirect('notebooks:post_detail', post.id)
 
-    else:
-        blocks = post.blocks.all().order_by('order')
-        context = {
-            'post': post,
-            'blocks': blocks,   # 여기 중요: block 이 아니라 blocks
-        }
-        return render(request, 'post/post_update.html', context)
+    blocks = post.blocks.all().order_by('order')
+    context = {
+        'post': post,
+        'blocks': blocks,
+    }
+    return render(request, 'post/post_update.html', context)
 
 # Post 삭제( 동시에 안에있는 block들까지 모두 삭제 )
 @login_required
