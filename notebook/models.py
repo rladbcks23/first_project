@@ -4,7 +4,7 @@ from django.conf import settings
 # 폴더 역할
 class Notebook(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE) # 유저 확인
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
