@@ -1,26 +1,28 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
-
-<h1>새 노트북 만들기</h1>
-
-<form actions={% url "notebooks:notebook_create" %} method="post">
-    {% csrf_token %}
-
+<div class="page-wrapper">
+  <div class="page-header">
     <div>
-        <label for="{{ form.name.id_for_label }}">노트북 이름</label>
-        {{ form.name }}
+      <h1 class="page-name">새 노트북 만들기</h1>
+      <p class="page-subname">새로운 기록 공간의 이름을 정해보세요.</p>
     </div>
+  </div>
 
-    {% if form.name.errors %}
-        <div>
-            {{ form.name.errors }}
-        </div>
-    {% endif %}
+  <div class="card form-card">
+    <form method="POST">
+      {% csrf_token %}
 
-    <button type="submit">생성하기</button>
-</form>
+      <div class="form-group">
+        <label for="{{ form.name.id_for_label }}" class="form-label">노트북 이름</label>
+        {{ form.name }}
+      </div>
 
-<a href="{% url 'notebooks:index' %}">목록으로 돌아가기</a>
-
-{% endblock content %}
+      <div class="form-actions">
+        <button type="submit" class="primary-btn">생성하기</button>
+        <a href="{% url 'notebooks:index' %}" class="secondary-btn">목록으로 돌아가기</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

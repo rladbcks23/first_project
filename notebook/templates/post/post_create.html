@@ -1,171 +1,193 @@
 {% extends "base.html" %}
 
-{% block head %}
-<title>새 메모 만들기</title>
-
-<style>
-    body {
-        max-width: 1000px;
-        margin: 40px auto;
-        font-family: Arial, sans-serif;
-    }
-
-    h1 {
-        margin-bottom: 28px;
-    }
-
-    .title-input {
-        width: 100%;
-        font-size: 28px;
-        padding: 18px 16px;
-        margin-bottom: 24px;
-        box-sizing: border-box;
-    }
-
-    .top-actions {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-
-    .block-item {
-        margin-bottom: 24px;
-        padding: 14px;
-        border: 1px solid #ddd;
-        border-radius: 12px;
-        background: #fafafa;
-    }
-
-    .block-item textarea {
-        width: 100%;
-        min-height: 120px;
-        padding: 12px;
-        font-size: 16px;
-        box-sizing: border-box;
-        resize: vertical;
-    }
-
-    .preview-area {
-        margin-top: 14px;
-    }
-
-    .preview-area img,
-    .preview-area video {
-        max-width: 320px;
-        display: block;
-        border-radius: 8px;
-    }
-
-    .submit-btn {
-        margin-top: 16px;
-    }
-</style>
-{% endblock head %}
-
 {% block content %}
-<h1>새 메모 만들기</h1>
+<div class="page-wrapper">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">새 메모 만들기</h1>
+      <p class="page-subtitle">제목과 블록을 추가해서 새 글을 작성해보세요.</p>
+    </div>
+  </div>
 
-<form method="post" enctype="multipart/form-data">
+  <form method="post" enctype="multipart/form-data" class="card editor-card">
     {% csrf_token %}
 
-    <input
-        class="title-input"
+    <div class="form-group">
+      <label for="post-title" class="form-label">제목</label>
+      <input
+        id="post-title"
+        class="form-input title-input"
         type="text"
         name="title"
-        placeholder="제목"
-    >
-
-    <div class="top-actions">
-        <select id="block-type-select">
-            <option value="text">텍스트</option>
-            <option value="image">이미지</option>
-            <option value="video">동영상</option>
-        </select>
-        <button type="button" id="add-block-btn">블록 추가</button>
+        placeholder="제목을 입력하세요"
+        required
+      >
     </div>
 
-    <div id="block-container"></div>
+    <div id="block-container" class="block-editor-list"></div>
 
-    <button class="submit-btn" type="submit">저장</button>
-</form>
+    <div class="editor-toolbar editor-toolbar-bottom">
+      <div class="form-group toolbar-group">
+        <label for="block-type-select" class="form-label">블록 추가</label>
+        <select id="block-type-select" class="form-input">
+          <option value="text">텍스트</option>
+          <option value="image">이미지</option>
+          <option value="video">동영상</option>
+        </select>
+      </div>
+
+      <button type="button" id="add-block-btn" class="secondary-btn">블록 추가</button>
+    </div>
+
+    <div class="form-actions">
+      <button class="primary-btn" type="submit">저장</button>
+      <a href="{% url 'notebooks:notebook_detail' notebook.id %}" class="secondary-btn">취소</a>
+    </div>
+  </form>
+</div>
 
 <script>
-    let blockIndex = 0;
+  let blockIndex = 0;
 
-    const blockContainer = document.getElementById('block-container');
-    const addBtn = document.getElementById('add-block-btn');
-    const select = document.getElementById('block-type-select');
+  const blockContainer = document.getElementById('block-container');
+  const addBtn = document.getElementById('add-block-btn');
+  const select = document.getElementById('block-type-select');
 
-    function createBlockHtml(type, index) {
-        if (type === 'text') {
-            return `
-                <div class="block-item">
-                    <input type="hidden" name="blocks[${index}][type]" value="text">
-                    <textarea name="blocks[${index}][content]" placeholder="텍스트를 입력하세요"></textarea>
-                </div>
-            `;
-        }
+  function createBlockHtml(type, index) {
+    if (type === 'text') {
+      return `
+        <div class="block-item" data-existing="false">
+          <div class="block-item-header">
+            <div class="block-item-header-left">
+              <h3 class="block-item-title">새 텍스트 블록</h3>
+              <span class="block-badge">text</span>
+            </div>
+            <button type="button" class="danger-btn block-delete-btn">블록 삭제</button>
+          </div>
 
-        if (type === 'image') {
-            return `
-                <div class="block-item">
-                    <input type="hidden" name="blocks[${index}][type]" value="image">
-                    <p>이미지 업로드</p>
-                    <input type="file" name="blocks[${index}][image]" accept="image/*">
-                    <div class="preview-area"></div>
-                </div>
-            `;
-        }
+          <input type="hidden" name="blocks[${index}][type]" value="text">
+          <input type="hidden" name="blocks[${index}][delete]" value="0" class="delete-flag">
 
-        if (type === 'video') {
-            return `
-                <div class="block-item">
-                    <input type="hidden" name="blocks[${index}][type]" value="video">
-                    <p>동영상 업로드</p>
-                    <input type="file" name="blocks[${index}][video]" accept="video/*">
-                    <div class="preview-area"></div>
-                </div>
-            `;
-        }
-
-        return '';
+          <div class="form-group">
+            <label class="form-label">텍스트 내용</label>
+            <textarea
+              class="form-textarea"
+              name="blocks[${index}][content]"
+              placeholder="텍스트를 입력하세요"
+            ></textarea>
+          </div>
+        </div>
+      `;
     }
 
-    addBtn.addEventListener('click', function () {
-        const type = select.value;
-        const html = createBlockHtml(type, blockIndex);
-        blockContainer.insertAdjacentHTML('beforeend', html);
-        blockIndex++;
-    });
+    if (type === 'image') {
+      return `
+        <div class="block-item" data-existing="false">
+          <div class="block-item-header">
+            <div class="block-item-header-left">
+              <h3 class="block-item-title">새 이미지 블록</h3>
+              <span class="block-badge">image</span>
+            </div>
+            <button type="button" class="danger-btn block-delete-btn">블록 삭제</button>
+          </div>
 
-    blockContainer.addEventListener('change', function (e) {
-        const target = e.target;
+          <input type="hidden" name="blocks[${index}][type]" value="image">
+          <input type="hidden" name="blocks[${index}][delete]" value="0" class="delete-flag">
 
-        if (target.type !== 'file') return;
-        if (!target.files || !target.files[0]) return;
+          <div class="form-group">
+            <label class="form-label">이미지 업로드</label>
+            <input
+              class="form-input"
+              type="file"
+              name="blocks[${index}][image]"
+              accept="image/*"
+            >
+          </div>
 
-        const file = target.files[0];
-        const blockItem = target.closest('.block-item');
-        if (!blockItem) return;
+          <div class="preview-area"></div>
+        </div>
+      `;
+    }
 
-        const previewArea = blockItem.querySelector('.preview-area');
-        if (!previewArea) return;
+    if (type === 'video') {
+      return `
+        <div class="block-item" data-existing="false">
+          <div class="block-item-header">
+            <div class="block-item-header-left">
+              <h3 class="block-item-title">새 동영상 블록</h3>
+              <span class="block-badge">video</span>
+            </div>
+            <button type="button" class="danger-btn block-delete-btn">블록 삭제</button>
+          </div>
 
-        previewArea.innerHTML = '';
-        const fileUrl = URL.createObjectURL(file);
+          <input type="hidden" name="blocks[${index}][type]" value="video">
+          <input type="hidden" name="blocks[${index}][delete]" value="0" class="delete-flag">
 
-        if (target.name.includes('[image]')) {
-            const img = document.createElement('img');
-            img.src = fileUrl;
-            previewArea.appendChild(img);
-        }
+          <div class="form-group">
+            <label class="form-label">동영상 업로드</label>
+            <input
+              class="form-input"
+              type="file"
+              name="blocks[${index}][video]"
+              accept="video/*"
+            >
+          </div>
 
-        if (target.name.includes('[video]')) {
-            const video = document.createElement('video');
-            video.src = fileUrl;
-            video.controls = true;
-            previewArea.appendChild(video);
-        }
-    });
+          <div class="preview-area"></div>
+        </div>
+      `;
+    }
+
+    return '';
+  }
+
+  addBtn.addEventListener('click', function () {
+    const type = select.value;
+    const html = createBlockHtml(type, blockIndex);
+
+    blockContainer.insertAdjacentHTML('beforeend', html);
+    blockIndex++;
+  });
+
+  blockContainer.addEventListener('change', function (e) {
+    const target = e.target;
+
+    if (target.type !== 'file') return;
+    if (!target.files || !target.files[0]) return;
+
+    const file = target.files[0];
+    const blockItem = target.closest('.block-item');
+    if (!blockItem) return;
+
+    const previewArea = blockItem.querySelector('.preview-area');
+    if (!previewArea) return;
+
+    previewArea.innerHTML = '';
+    const fileUrl = URL.createObjectURL(file);
+
+    if (target.name.includes('[image]')) {
+      const img = document.createElement('img');
+      img.src = fileUrl;
+      img.alt = '미리보기 이미지';
+      previewArea.appendChild(img);
+    }
+
+    if (target.name.includes('[video]')) {
+      const video = document.createElement('video');
+      video.src = fileUrl;
+      video.controls = true;
+      previewArea.appendChild(video);
+    }
+  });
+
+  blockContainer.addEventListener('click', function (e) {
+    const deleteBtn = e.target.closest('.block-delete-btn');
+    if (!deleteBtn) return;
+
+    const blockItem = deleteBtn.closest('.block-item');
+    if (!blockItem) return;
+
+    blockItem.remove();
+  });
 </script>
 {% endblock content %}

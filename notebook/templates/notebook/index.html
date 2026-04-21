@@ -2,25 +2,37 @@
 
 {% block content %}
 
-<h1>내 메모들</h1>
-{% comment %} notebook 생성 {% endcomment %}
-<a href={% url "notebooks:notebook_create"  %}>메모하러가기</a>
+    <div class="page-wrapper">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">내 메모들</h1>
+      <p class="page-subtitle">내가 만든 노트북을 한눈에 관리해보세요.</p>
+    </div>
 
-{% comment %} 만약 노트북이 존재한다면 {% endcomment %}
-{% if notebooks %}
-    <ul>
-        {% comment %} 모든 노트북 가져와서 리스트 출력하기 {% endcomment %}
-        {% for notebook in notebooks %}
-            <li>
-                <a href={% url "notebooks:notebook_detail" notebook.id %}><strong>{{ notebook.name }}</strong></a>
-                <p>게시글 수: {{ notebook.posts.count }}</p>
-                <p>생성일: {{ notebook.created_at|date:"Y-m-d H:i" }}</p>
-            </li>
-        {% endfor %}
+    <a href="{% url 'notebooks:notebook_create' %}" class="primary-btn">
+      메모하러 가기
+    </a>
+  </div>
+
+  {% if notebooks %}
+    <ul class="notebook-list">
+      {% for notebook in notebooks %}
+        <li>
+          <a href="{% url 'notebooks:notebook_detail' notebook.id %}" class="notebook-card">
+            <h2 class="notebook-title">{{ notebook.name }}</h2>
+            <p class="notebook-meta">게시글 수: {{ notebook.posts.count }}</p>
+            <p class="notebook-meta">생성일: {{ notebook.created_at|date:"Y-m-d H:i" }}</p>
+          </a>
+        </li>
+      {% endfor %}
     </ul>
-{% comment %} 만약 노트북이 없다면 {% endcomment %}
-{% else %}
-    <p>아직 생성된 노트북이 없습니다.</p>
-{% endif %}
+  {% else %}
+    <div class="card empty-box">
+      <h3>아직 생성된 노트북이 없습니다.</h3>
+      <p>첫 번째 노트북을 만들고 기록을 시작해보세요.</p>
+      <a href="{% url 'notebooks:notebook_create' %}" class="primary-btn">노트북 만들기</a>
+    </div>
+  {% endif %}
+</div>
 
 {% endblock content %}

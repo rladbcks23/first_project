@@ -1,118 +1,70 @@
-{% extends "base.html" %}
-
-{% block head %}
-<title>{{ post.title }}</title>
-
-<style>
-    body {
-        max-width: 1000px;
-        margin: 40px auto;
-        font-family: Arial, sans-serif;
-    }
-
-    h1 {
-        margin-bottom: 20px;
-    }
-
-    .meta-box {
-        margin: 20px 0;
-    }
-
-    .button-group {
-        display: flex;
-        gap: 10px;
-        margin: 20px 0;
-    }
-
-    .block-list {
-        margin-top: 24px;
-    }
-
-    .block-item {
-        margin-bottom: 24px;
-        padding: 14px;
-        border: 1px solid #ddd;
-        border-radius: 12px;
-        background: #fafafa;
-    }
-
-    .block-item img,
-    .block-item video {
-        max-width: 420px;
-        display: block;
-        border-radius: 8px;
-    }
-
-    .empty-text {
-        color: #666;
-    }
-</style>
-
-<script>
-    function handleDelete() {
-        if (confirm("이 포스트를 삭제하시겠습니까?")) {
-            document.getElementById("deleteForm").submit();
-        }
-    }
-</script>
-{% endblock head %}
+{% extends 'base.html' %}
 
 {% block content %}
-<h1>{{ post.title }}</h1>
-
-<hr>
-
-<div class="meta-box">
-    <p>노트북: {{ post.notebook.name }}</p>
-    <p>작성일: {{ post.created_at|date:"Y-m-d H:i" }}</p>
-</div>
-
-<div class="button-group">
-    <form action="{% url 'notebooks:notebook_detail' post.notebook.id %}" method="get">
-        <button type="submit">노트북으로</button>
-    </form>
-
-    <form action="{% url 'notebooks:post_update' post.id %}" method="get">
-        <button type="submit">수정</button>
-    </form>
-
-    <form id="deleteForm" action="{% url 'notebooks:post_delete' post.id %}" method="POST">
-        {% csrf_token %}
-        <button type="button" onclick="handleDelete()">포스트 삭제</button>
-    </form>
-</div>
-
-<hr>
-
-<div class="block-list">
+<div class="page-wrapper">
+    <div class="card detail-top-card">
+      <h1 class="detail-title">{{ post.title }}</h1>
+  
+      <div class="detail-meta">
+        노트북: {{ notebook.name }}<br>
+        작성일: {{ post.created_at|date:"Y-m-d H:i" }}
+      </div>
+  
+      <div class="action-row">
+        <a href="{% url 'notebooks:notebook_detail' notebook.id %}" class="secondary-btn">
+          노트북으로
+        </a>
+  
+        <a href="{% url 'notebooks:post_update' post.id %}" class="secondary-btn">
+          수정
+        </a>
+  
+        <form
+          action="{% url 'notebooks:post_delete' post.id %}"
+          method="POST"
+          class="inline-form"
+          onsubmit="return confirm('이 포스트를 정말 삭제하시겠습니까?');"
+        >
+          {% csrf_token %}
+          <button type="submit" class="danger-btn">포스트 삭제</button>
+        </form>
+      </div>
+    </div>
+    <div class="card section-card">
     {% if blocks %}
+        <div class="content-box">
         {% for block in blocks %}
-            <div class="block-item">
-                {% if block.block_type == 'text' %}
-                    <p>{{ block.content|linebreaks }}</p>
+            {% if block.block_type == 'text' %}
+            <div class="text-block">{{ block.content }}</div>
 
-                {% elif block.block_type == 'image' %}
-                    {% if block.image_file %}
-                        <img src="{{ block.image_file.url }}" alt="이미지 블록">
-                    {% elif block.content %}
-                        <img src="{{ block.content }}" alt="이미지 블록">
-                    {% endif %}
-
-                {% elif block.block_type == 'video' %}
-                    {% if block.video_file %}
-                        <video controls>
-                            <source src="{{ block.video_file.url }}">
-                        </video>
-                    {% elif block.content %}
-                        <video controls>
-                            <source src="{{ block.content }}">
-                        </video>
-                    {% endif %}
+            {% elif block.block_type == 'image' %}
+            <div class="media-block">
+                {% if block.image_file %}
+                <img src="{{ block.image_file.url }}" alt="이미지">
+                {% else %}
+                <p>이미지가 없습니다.</p>
                 {% endif %}
             </div>
+
+            {% elif block.block_type == 'video' %}
+            <div class="media-block">
+                {% if block.video_file %}
+                <video controls>
+                    <source src="{{ block.video_file.url }}">
+                </video>
+                {% else %}
+                <p>동영상이 없습니다.</p>
+                {% endif %}
+            </div>
+            {% endif %}
         {% endfor %}
+        </div>
     {% else %}
-        <p class="empty-text">아직 블록이 없습니다.</p>
+        <div class="empty-box">
+        <h3>아직 블록이 없습니다.</h3>
+        <p>이 포스트에 내용을 추가해보세요.</p>
+        </div>
     {% endif %}
+    </div>
 </div>
-{% endblock content %}
+{% endblock %}
