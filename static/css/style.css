@@ -123,7 +123,7 @@ a {
 .notebook-card {
   display: block;
   background: white;
-  border: 1px solid #ececec;
+  border: 1px solid #c8c8c8;
   border-radius: 18px;
   padding: 22px;
   transition: 0.2s ease;
@@ -769,6 +769,47 @@ a {
 .profile-header {
   max-width: 720px;
   margin: 0 auto 24px;
+}
+
+.edit-button {
+    display: inline-block;
+    background-color: #0f172a;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.card {
+  border: 1px solid #d1d5db; /* 조금 더 진하게 */
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.sub-card {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+body {
+  background: #f1f5f9;
+}
+
+.navbar {
+  background-color: #1f2937;  /* 진한 네이비/다크 */
+}
+
+.nav-logo-text {
+  color: #ffffff;
+}
+
+.navbar a {
+  color: #e5e7eb;
+}
+
+.nav-user {
+  color: #ffffff;
 }
 
 @media (max-width: 768px) {
