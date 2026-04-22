@@ -1,28 +1,30 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
 <div class="page-wrapper">
-  <div class="page-header">
-    <div>
-      <h1 class="page-name">새 노트북 만들기</h1>
-      <p class="page-subname">새로운 기록 공간의 이름을 정해보세요.</p>
+  <div class="narrow-layout">
+    <div class="page-header narrow-header">
+      <div>
+        <h1 class="page-title">새 노트북 만들기</h1>
+        <p class="page-subtitle">새로운 기록 공간의 이름을 정해보세요.</p>
+      </div>
     </div>
-  </div>
 
-  <div class="card form-card">
-    <form method="POST">
-      {% csrf_token %}
+    <div class="card form-card">
+      <form method="POST">
+        {% csrf_token %}
 
-      <div class="form-group">
-        <label for="{{ form.name.id_for_label }}" class="form-label">노트북 이름</label>
-        {{ form.name }}
-      </div>
+        <div class="form-group">
+          <label for="{{ form.name.id_for_label }}" class="form-label">노트북 이름</label>
+          {{ form.name }}
+        </div>
 
-      <div class="form-actions">
-        <button type="submit" class="primary-btn">생성하기</button>
-        <a href="{% url 'notebooks:index' %}" class="secondary-btn">목록으로 돌아가기</a>
-      </div>
-    </form>
+        <div class="form-actions">
+          <button type="submit" class="primary-btn">생성하기</button>
+          <a href="{% url 'notebooks:index' %}" class="secondary-btn">목록으로 돌아가기</a>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock %}
