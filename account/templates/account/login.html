@@ -1,16 +1,51 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>로그인</h1>
+<div class="page-wrapper">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">로그인</h1>
+      <p class="page-subtitle">로그인해서 내 메모를 관리해보세요.</p>
+    </div>
+  </div>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">로그인</button>
-</form>
+  <div class="card form-card auth-card">
+    <form method="post">
+      {% csrf_token %}
 
-<p>
-    계정이 없나요?
-    <a href="{% url 'accounts:signup' %}">회원가입</a>
-</p>
+      <div class="form-group">
+        <label for="id_username" class="form-label">이메일</label>
+        <input
+          type="text"
+          name="username"
+          id="id_username"
+          class="form-input"
+          placeholder="이메일을 입력하세요"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="id_password" class="form-label">비밀번호</label>
+        <input
+          type="password"
+          name="password"
+          id="id_password"
+          class="form-input"
+          placeholder="비밀번호를 입력하세요"
+          required
+        >
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="primary-btn">로그인</button>
+      </div>
+
+      <div class="form-footer">
+        <span class="form-footer-text">계정이 없으신가요?</span>
+        <strong><a href="{% url 'accounts:signup' %}" class="link-btn">회원가입</a></strong>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock content %}

@@ -1,9 +1,36 @@
-{% if request.user.is_authenticated %}
-    <span>{{ request.user.email|default:request.user.username }}</span>
-    <a href="{% url 'accounts:profile' %}">회원정보</a>
+{% extends "base.html" %}
 
-    <form action="{% url 'accounts:logout' %}" method="post">
-        {% csrf_token %}
-        <button type="submit">로그아웃</button>
-    </form>
-{% endif %}
+{% block content %}
+<div class="page-wrapper">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">내 프로필</h1>
+      <p class="page-subtitle">현재 로그인한 계정 정보를 확인할 수 있습니다.</p>
+    </div>
+  </div>
+
+  <div class="card profile-card">
+    <div class="profile-row">
+      <div class="profile-label">아이디</div>
+      <div class="profile-value">{{ request.user.username }}</div>
+    </div>
+    
+    <div class="profile-row">
+      <div class="profile-label">이메일</div>
+      <div class="profile-value">{{ request.user.email }}</div>
+    </div>
+
+    <div class="profile-row">
+      <div class="profile-label">가입일</div>
+      <div class="profile-value">{{ request.user.date_joined|date:"Y년 m월 d일 H시 i분" }}</div>
+    </div>
+
+    <div class="form-actions profile-actions">
+      <a href="{% url 'notebooks:index' %}" class="secondary-btn">메인으로</a>
+      <form action={% url "accounts:logout" %}>
+        <button type="button" class="danger-btn">로그아웃</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}
