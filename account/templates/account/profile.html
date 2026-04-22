@@ -13,6 +13,9 @@
     <div class="profile-row">
       <div class="profile-label">아이디</div>
       <div class="profile-value">{{ request.user.username }}</div>
+      <a href="{% url 'accounts:update' %}" class="edit-button">
+          회원정보 수정
+      </a>
     </div>
     
     <div class="profile-row">
@@ -27,8 +30,9 @@
 
     <div class="form-actions profile-actions">
       <a href="{% url 'notebooks:index' %}" class="secondary-btn">메인으로</a>
-      <form action={% url "accounts:logout" %}>
-        <button type="button" class="danger-btn">로그아웃</button>
+      <form action="{% url 'accounts:logout' %}" method="post" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="danger-btn">로그아웃</button>
       </form>
     </div>
   </div>
