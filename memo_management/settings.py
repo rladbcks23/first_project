@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'notebook',
     'account',
     'storages',
-    'testimg',
+    'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -160,3 +160,33 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+
+# settings.py
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "noreply@example.com"
+
+
+
+'''
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+SITE_ID = 1
+
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_HOST_USER = "a01030163474@gmail.com"
+# EMAIL_HOST_PASSWORD = os.getenv('APP_PASSWORD')
+EMAIL_HOST_PASSWORD = 'hfgb aeom htwz pbzr'
+EMAIL_USE_TLS = True
+
+
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+EMAIL_PORT = 465
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+
+print("APP_PASSWORD loaded:", bool(os.getenv("APP_PASSWORD")))
+print("APP_PASSWORD repr:", repr(os.getenv("APP_PASSWORD")))
+'''
