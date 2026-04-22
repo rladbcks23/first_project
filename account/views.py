@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout 
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import SignUpForm
+from django.contrib.auth.decorators import login_required
 
 # 회원가입
 def signup(request):
@@ -54,3 +55,7 @@ def logout_views(request):
         return redirect('accounts:login')
     # 로그아웃 진행
     return render(request, 'account/logout.html')
+
+@login_required
+def profile_view(request):
+    return render(request, 'account/profile.html')

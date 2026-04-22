@@ -1,0 +1,9 @@
+{% if request.user.is_authenticated %}
+    <span>{{ request.user.email|default:request.user.username }}</span>
+    <a href="{% url 'accounts:profile' %}">회원정보</a>
+
+    <form action="{% url 'accounts:logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">로그아웃</button>
+    </form>
+{% endif %}

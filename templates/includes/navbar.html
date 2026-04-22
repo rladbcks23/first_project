@@ -1,0 +1,19 @@
+<nav class="navbar">
+    <div class="navbar-left">
+        <a href="/" class="nav-logo">Memo Service</a>
+    </div>
+
+    <div class="navbar-right">
+        {% if request.user.is_authenticated %}
+            <span class="nav-user">
+                {{ request.user.email|default:request.user.username }}
+            </span>
+            <a href="{% url 'accounts:profile' %}" class="nav-link">회원정보</a>
+
+            <form action="{% url 'accounts:logout' %}" method="post" class="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="nav-button">로그아웃</button>
+            </form>
+        {% endif %}
+    </div>
+</nav>
