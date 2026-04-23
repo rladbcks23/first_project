@@ -829,4 +829,40 @@ body {
   .block-item {
     padding: 18px;
   }
+
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.sortable-ghost {
+  opacity: 0.45;
+}
+
+.sortable-chosen {
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+}
+
+.sortable-drag {
+  transform: rotate(1deg);
+}
+
 }

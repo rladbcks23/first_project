@@ -30,6 +30,7 @@
         <div class="block-item" data-existing="true">
           <div class="block-item-header">
             <div class="block-item-header-left">
+              <button type="button" class="drag-handle" title="드래그해서 이동">☰</button>
               <h3 class="block-item-title">블록 {{ forloop.counter }}</h3>
               <span class="block-badge">{{ block.block_type }}</span>
             </div>
@@ -40,6 +41,7 @@
           <input type="hidden" name="blocks[{{ forloop.counter0 }}][id]" value="{{ block.id }}">
           <input type="hidden" name="blocks[{{ forloop.counter0 }}][type]" value="{{ block.block_type }}">
           <input type="hidden" name="blocks[{{ forloop.counter0 }}][delete]" value="0" class="delete-flag">
+          <input type="hidden" name="blocks[{{ forloop.counter0 }}][order]" value="{{ forloop.counter0 }}" class="block-order-input">
 
           {% if block.block_type == 'text' %}
             <div class="form-group">
@@ -141,12 +143,45 @@
   </form>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
   let blockIndex = {{ blocks|length }};
 
   const blockContainer = document.getElementById('block-container');
   const addBtn = document.getElementById('add-block-btn');
   const select = document.getElementById('block-type-select');
+
+  function updateBlockOrder() {
+    const visibleBlocks = [...blockContainer.querySelectorAll('.block-item')]
+      .filter(block => block.style.display !== 'none');
+
+    visibleBlocks.forEach((block, orderIndex) => {
+      const titleEl = block.querySelector('.block-item-title');
+      const orderInput = block.querySelector('.block-order-input');
+
+      if (titleEl) {
+        titleEl.textContent = `블록 ${orderIndex + 1}`;
+      }
+
+      if (orderInput) {
+        orderInput.value = orderIndex;
+      }
+    });
+  }
+
+  new Sortable(blockContainer, {
+    draggable: '.block-item',
+    handle: '.drag-handle',
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    dragClass: 'sortable-drag',
+    forceFallback: true,
+    fallbackTolerance: 3,
+    onEnd() {
+      updateBlockOrder();
+    }
+  });
 
   addBtn.addEventListener('click', function () {
     const type = select.value;
@@ -159,7 +194,8 @@
         <div class="block-item" data-existing="false">
           <div class="block-item-header">
             <div class="block-item-header-left">
-              <h3 class="block-item-title">새 텍스트 블록</h3>
+              <button type="button" class="drag-handle" title="드래그해서 이동">☰</button>
+              <h3 class="block-item-title">블록 1</h3>
               <span class="block-badge">text</span>
             </div>
             <button type="button" class="danger-btn block-delete-btn">블록 삭제</button>
@@ -167,6 +203,7 @@
 
           <input type="hidden" name="blocks[${index}][type]" value="text">
           <input type="hidden" name="blocks[${index}][delete]" value="0" class="delete-flag">
+          <input type="hidden" name="blocks[${index}][order]" value="0" class="block-order-input">
 
           <div class="form-group">
             <label class="form-label">텍스트 내용</label>
@@ -179,7 +216,8 @@
         <div class="block-item" data-existing="false">
           <div class="block-item-header">
             <div class="block-item-header-left">
-              <h3 class="block-item-title">새 이미지 블록</h3>
+              <button type="button" class="drag-handle" title="드래그해서 이동">☰</button>
+              <h3 class="block-item-title">블록 1</h3>
               <span class="block-badge">image</span>
             </div>
             <button type="button" class="danger-btn block-delete-btn">블록 삭제</button>
@@ -187,6 +225,7 @@
 
           <input type="hidden" name="blocks[${index}][type]" value="image">
           <input type="hidden" name="blocks[${index}][delete]" value="0" class="delete-flag">
+          <input type="hidden" name="blocks[${index}][order]" value="0" class="block-order-input">
 
           <div class="form-group">
             <label class="form-label">이미지 업로드</label>
@@ -201,7 +240,8 @@
         <div class="block-item" data-existing="false">
           <div class="block-item-header">
             <div class="block-item-header-left">
-              <h3 class="block-item-title">새 동영상 블록</h3>
+              <button type="button" class="drag-handle" title="드래그해서 이동">☰</button>
+              <h3 class="block-item-title">블록 1</h3>
               <span class="block-badge">video</span>
             </div>
             <button type="button" class="danger-btn block-delete-btn">블록 삭제</button>
@@ -209,6 +249,7 @@
 
           <input type="hidden" name="blocks[${index}][type]" value="video">
           <input type="hidden" name="blocks[${index}][delete]" value="0" class="delete-flag">
+          <input type="hidden" name="blocks[${index}][order]" value="0" class="block-order-input">
 
           <div class="form-group">
             <label class="form-label">동영상 업로드</label>
@@ -221,6 +262,7 @@
     }
 
     blockContainer.insertAdjacentHTML('beforeend', html);
+    updateBlockOrder();
   });
 
   blockContainer.addEventListener('change', function (e) {
@@ -265,12 +307,20 @@
 
     if (isExisting) {
       const deleteFlag = blockItem.querySelector('.delete-flag');
+      const orderInput = blockItem.querySelector('.block-order-input');
+
       if (deleteFlag) deleteFlag.value = '1';
+      if (orderInput) orderInput.value = '-1';
+
       blockItem.style.display = 'none';
     } else {
       blockItem.remove();
     }
+
+    updateBlockOrder();
   });
+
+  updateBlockOrder();
 </script>
 
 {% endblock content %}

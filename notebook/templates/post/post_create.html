@@ -46,6 +46,7 @@
   </form>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
   let blockIndex = 0;
 
@@ -53,13 +54,31 @@
   const addBtn = document.getElementById('add-block-btn');
   const select = document.getElementById('block-type-select');
 
+  function updateBlockOrder() {
+    const blocks = [...blockContainer.querySelectorAll(':scope > .block-item')];
+
+    blocks.forEach((block, orderIndex) => {
+      const titleEl = block.querySelector('.block-item-title');
+      const orderInput = block.querySelector('.block-order-input');
+
+      if (titleEl) {
+        titleEl.textContent = `블록 ${orderIndex + 1}`;
+      }
+
+      if (orderInput) {
+        orderInput.value = orderIndex;
+      }
+    });
+  }
+
   function createBlockHtml(type, index) {
     if (type === 'text') {
       return `
         <div class="block-item" data-existing="false">
           <div class="block-item-header">
             <div class="block-item-header-left">
-              <h3 class="block-item-title">새 텍스트 블록</h3>
+              <button type="button" class="drag-handle" title="드래그해서 이동">☰</button>
+              <h3 class="block-item-title">블록 1</h3>
               <span class="block-badge">text</span>
             </div>
             <button type="button" class="danger-btn block-delete-btn">블록 삭제</button>
@@ -67,6 +86,7 @@
 
           <input type="hidden" name="blocks[${index}][type]" value="text">
           <input type="hidden" name="blocks[${index}][delete]" value="0" class="delete-flag">
+          <input type="hidden" name="blocks[${index}][order]" value="0" class="block-order-input">
 
           <div class="form-group">
             <label class="form-label">텍스트 내용</label>
@@ -85,7 +105,8 @@
         <div class="block-item" data-existing="false">
           <div class="block-item-header">
             <div class="block-item-header-left">
-              <h3 class="block-item-title">새 이미지 블록</h3>
+              <button type="button" class="drag-handle" title="드래그해서 이동">☰</button>
+              <h3 class="block-item-title">블록 1</h3>
               <span class="block-badge">image</span>
             </div>
             <button type="button" class="danger-btn block-delete-btn">블록 삭제</button>
@@ -93,6 +114,7 @@
 
           <input type="hidden" name="blocks[${index}][type]" value="image">
           <input type="hidden" name="blocks[${index}][delete]" value="0" class="delete-flag">
+          <input type="hidden" name="blocks[${index}][order]" value="0" class="block-order-input">
 
           <div class="form-group">
             <label class="form-label">이미지 업로드</label>
@@ -114,7 +136,8 @@
         <div class="block-item" data-existing="false">
           <div class="block-item-header">
             <div class="block-item-header-left">
-              <h3 class="block-item-title">새 동영상 블록</h3>
+              <button type="button" class="drag-handle" title="드래그해서 이동">☰</button>
+              <h3 class="block-item-title">블록 1</h3>
               <span class="block-badge">video</span>
             </div>
             <button type="button" class="danger-btn block-delete-btn">블록 삭제</button>
@@ -122,6 +145,7 @@
 
           <input type="hidden" name="blocks[${index}][type]" value="video">
           <input type="hidden" name="blocks[${index}][delete]" value="0" class="delete-flag">
+          <input type="hidden" name="blocks[${index}][order]" value="0" class="block-order-input">
 
           <div class="form-group">
             <label class="form-label">동영상 업로드</label>
@@ -141,12 +165,28 @@
     return '';
   }
 
+  const sortable = new Sortable(blockContainer, {
+    draggable: '.block-item',
+    handle: '.drag-handle',
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    dragClass: 'sortable-drag',
+    forceFallback: true,
+    fallbackTolerance: 3,
+    onEnd() {
+      updateBlockOrder();
+      console.log('after sort:', [...blockContainer.children].map(el => el.querySelector('.block-item-title')?.textContent));
+    }
+  });
+
   addBtn.addEventListener('click', function () {
     const type = select.value;
     const html = createBlockHtml(type, blockIndex);
 
     blockContainer.insertAdjacentHTML('beforeend', html);
     blockIndex++;
+    updateBlockOrder();
   });
 
   blockContainer.addEventListener('change', function (e) {
@@ -188,6 +228,7 @@
     if (!blockItem) return;
 
     blockItem.remove();
+    updateBlockOrder();
   });
 </script>
 {% endblock content %}
