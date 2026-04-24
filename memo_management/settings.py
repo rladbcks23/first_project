@@ -174,27 +174,10 @@ print("AWS_REGION:", os.getenv("AWS_S3_REGION_NAME"))
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "noreply@example.com"
 
+import dj_database_url
 
-
-'''
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-
-SITE_ID = 1
-
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_HOST_USER = "a01030163474@gmail.com"
-# EMAIL_HOST_PASSWORD = os.getenv('APP_PASSWORD')
-EMAIL_HOST_PASSWORD = 'hfgb aeom htwz pbzr'
-EMAIL_USE_TLS = True
-
-
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-
-EMAIL_PORT = 465
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = True
-
-print("APP_PASSWORD loaded:", bool(os.getenv("APP_PASSWORD")))
-print("APP_PASSWORD repr:", repr(os.getenv("APP_PASSWORD")))
-'''
+DATABASES = {
+    "default": dj_database_url.config(
+        default=os.getenv("DATABASE_URL")
+    )
+}
