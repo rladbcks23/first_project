@@ -31,8 +31,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'notebook',
-    'account',
+    'notebooks',
+    'accounts',
     'storages',
     'django.contrib.sites',
     'django.contrib.admin',

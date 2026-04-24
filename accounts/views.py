@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.core.files.storage import default_storage
 
-from notebook.models import Block # 삭제를 위해서
+from notebooks.models import Block # 삭제를 위해서
 
 # 회원가입
 def signup(request):
@@ -27,7 +27,7 @@ def signup(request):
     context = {
         'form': form,
     }
-    return render(request, 'account/signup.html', context)
+    return render(request, 'accounts/signup.html', context)
 
 # 로그인
 def login_views(request):
@@ -49,7 +49,7 @@ def login_views(request):
     context = {
         'form': form,
     }
-    return render(request, 'account/login.html', context)
+    return render(request, 'accounts/login.html', context)
 
 # 로그아웃
 def logout_views(request):
@@ -58,12 +58,12 @@ def logout_views(request):
         logout(request)
         return redirect('accounts:login')
     # 로그아웃 진행
-    return render(request, 'account/logout.html')
+    return render(request, 'accounts/logout.html')
 
 # 프로필 보기
 @login_required
 def profile_view(request):
-    return render(request, 'account/profile.html')
+    return render(request, 'accounts/profile.html')
 
 # 정보 수정하기
 @login_required
@@ -81,7 +81,7 @@ def update(request):
     context = {
         'form': form,
     }
-    return render(request, 'account/update.html', context)
+    return render(request, 'accounts/update.html', context)
 
 # 회원 탈퇴
 @login_required

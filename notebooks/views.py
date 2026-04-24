@@ -19,7 +19,7 @@ def index(request):
     context = {
         'notebooks': notebooks,
     }
-    return render(request, 'notebook/index.html', context)
+    return render(request, 'notebooks/index.html', context)
     
 # ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ MAIN ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
@@ -46,7 +46,7 @@ def notebook_create(request):
         context = {
             'form': form,
         }
-        return render(request, 'notebook/notebook_create.html', context)
+        return render(request, 'notebooks/notebook_create.html', context)
 
 # 노트북 안에 있는 Post들 보기
 @login_required
@@ -60,7 +60,7 @@ def notebook_detail(request, notebook_id):
         'notebook': notebook,
         'posts': posts,
     }
-    return render(request, 'notebook/notebook_detail.html', context)
+    return render(request, 'notebooks/notebook_detail.html', context)
 
 # 노트북 수정( 뭐 순서라든가, 안에 Post 삭제라든가, Post Notebook 옮기기라든가)
 @login_required
@@ -83,7 +83,7 @@ def notebook_update(request, notebook_id):
             'form': form,
             'notebook': notebook,
         }
-        return render(request, 'notebook/notebook_update.html', context)
+        return render(request, 'notebooks/notebook_update.html', context)
 
 # 노트북 삭제 ( 동시에 안에 있는 Post 모두 삭제 )
 @login_required
@@ -178,7 +178,7 @@ def post_create(request, notebook_id):
     else:
         form = PostForm()
 
-    return render(request, 'post/post_create.html', {
+    return render(request, 'posts/post_create.html', {
         'notebook': notebook,
         'form': form,
     })
@@ -198,7 +198,7 @@ def post_detail(request, post_id):
         'notebook': notebook,
     }
     # 값 넘기기
-    return render(request, 'post/post_detail.html', context)
+    return render(request, 'posts/post_detail.html', context)
 
 # Post 수정 ( 뭐 block들 위치를 바꾼다던가, 이미지를 바꾸거나 글을 수정한다던가... )
 # 수정 완료시 원래 block들을 전부 삭제하고 수정할때 만든 block들을 다시 load
@@ -215,7 +215,7 @@ def post_update(request, post_id):
                 'post': post,
                 'blocks': blocks,
             }
-            return render(request, 'post/post_update.html', context)
+            return render(request, 'posts/post_update.html', context)
 
         post.title = request.POST.get('title', '').strip()
         post.save()
@@ -289,7 +289,7 @@ def post_update(request, post_id):
         'post': post,
         'blocks': blocks,
     }
-    return render(request, 'post/post_update.html', context)
+    return render(request, 'posts/post_update.html', context)
 
 # Post 삭제( 동시에 안에있는 block들까지 모두 삭제 )
 @login_required

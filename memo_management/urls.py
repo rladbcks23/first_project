@@ -6,7 +6,6 @@ urlpatterns = [
     # 기본화면으로 이동
     path('', views.index, name='index'),
     path('admin/', admin.site.urls),
-    path('notebooks/', include('notebook.urls')),
-    path('accounts/', include(('account.urls', 'accounts'), namespace='accounts')),
-    path('testimg/', include('testimg.urls')),
+    path('notebooks/', include('notebooks.urls')),
+    path('accounts/', include(('accounts.urls', 'accounts'), namespace='accounts')),
 ]
