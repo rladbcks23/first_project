@@ -166,6 +166,9 @@ STORAGES = {
     },
 }
 
+print("AWS_BUCKET:", os.getenv("AWS_STORAGE_BUCKET_NAME"))
+print("AWS_REGION:", os.getenv("AWS_S3_REGION_NAME"))
+
 # settings.py
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
